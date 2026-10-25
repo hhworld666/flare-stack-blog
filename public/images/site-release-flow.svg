@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 660" role="img" aria-labelledby="title desc">
+  <title id="title">HH's Blog 的文章发布与程序更新流程</title>
+  <desc id="desc">文章在网页后台编辑并发布到 D1，由 Cloudflare Worker 提供；网站程序另由 GitHub 推送触发 Workers Builds 部署。</desc>
+  <defs>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8f7ff" />
+      <stop offset="1" stop-color="#f3f6fb" />
+    </linearGradient>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#3d3566" flood-opacity=".10" />
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#9385d8" />
+    </marker>
+  </defs>
+
+  <rect width="1440" height="660" rx="30" fill="url(#canvas)" />
+  <circle cx="1325" cy="92" r="150" fill="#e9e4ff" opacity=".55" />
+
+  <g font-family="Inter, 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif">
+    <text x="72" y="70" fill="#8b7acb" font-size="14" font-weight="700" letter-spacing="3">HH'S BLOG / PUBLISH FLOW</text>
+    <text x="72" y="116" fill="#25233a" font-size="32" font-weight="700">写文章和更新网站程序，是两条不同的流程</text>
+    <text x="72" y="149" fill="#747287" font-size="16">文章从后台直接发布；只有改动网站代码时，才需要走 GitHub 构建。</text>
+
+    <rect x="72" y="188" width="1296" height="34" rx="17" fill="#eeeaff" />
+    <circle cx="94" cy="205" r="5" fill="#7658e8" />
+    <text x="110" y="210" fill="#6852c2" font-size="13" font-weight="700" letter-spacing="1.5">A / 日常写作与发布</text>
+
+    <g filter="url(#shadow)">
+      <rect x="72" y="250" width="270" height="192" rx="20" fill="#fff" stroke="#e5e3f2" />
+      <circle cx="112" cy="292" r="20" fill="#eeeaff" />
+      <text x="112" y="298" fill="#6852c2" font-size="14" text-anchor="middle" font-weight="700">01</text>
+      <text x="104" y="344" fill="#28263b" font-size="21" font-weight="700">打开文章后台</text>
+      <text x="104" y="379" fill="#626176" font-size="15">在 TipTap 编辑正文</text>
+      <text x="104" y="406" fill="#626176" font-size="15">上传图片，填写分类标签</text>
+
+      <rect x="414" y="250" width="270" height="192" rx="20" fill="#fff" stroke="#e5e3f2" />
+      <circle cx="454" cy="292" r="20" fill="#eeeaff" />
+      <text x="454" y="298" fill="#6852c2" font-size="14" text-anchor="middle" font-weight="700">02</text>
+      <text x="446" y="344" fill="#28263b" font-size="21" font-weight="700">保存为草稿</text>
+      <text x="446" y="379" fill="#626176" font-size="15">内容写入 D1 数据库</text>
+      <text x="446" y="406" fill="#626176" font-size="15">未发布时访客看不到</text>
+
+      <rect x="756" y="250" width="270" height="192" rx="20" fill="#fff" stroke="#e5e3f2" />
+      <circle cx="796" cy="292" r="20" fill="#eeeaff" />
+      <text x="796" y="298" fill="#6852c2" font-size="14" text-anchor="middle" font-weight="700">03</text>
+      <text x="788" y="344" fill="#28263b" font-size="21" font-weight="700">点击发布</text>
+      <text x="788" y="379" fill="#626176" font-size="15">生成公开内容快照</text>
+      <text x="788" y="406" fill="#626176" font-size="15">更新搜索索引与缓存</text>
+
+      <rect x="1098" y="250" width="270" height="192" rx="20" fill="#7658e8" />
+      <circle cx="1138" cy="292" r="20" fill="#ffb96c" />
+      <text x="1138" y="298" fill="#5037b5" font-size="14" text-anchor="middle" font-weight="700">04</text>
+      <text x="1130" y="344" fill="#fff" font-size="21" font-weight="700">读者立即访问</text>
+      <text x="1130" y="379" fill="#f0edff" font-size="15">Worker 提供文章页面</text>
+      <text x="1130" y="406" fill="#f0edff" font-size="15">无需推送代码或重建站点</text>
+    </g>
+
+    <path d="M350 346h54m288 0h54m288 0h54" fill="none" stroke="#9385d8" stroke-width="3" marker-end="url(#arrow)" />
+
+    <rect x="72" y="480" width="1296" height="34" rx="17" fill="#fff0e5" />
+    <circle cx="94" cy="497" r="5" fill="#f48120" />
+    <text x="110" y="502" fill="#b65e20" font-size="13" font-weight="700" letter-spacing="1.5">B / 网站程序更新</text>
+
+    <g filter="url(#shadow)">
+      <rect x="72" y="542" width="360" height="82" rx="18" fill="#fff" stroke="#eee2d8" />
+      <text x="104" y="577" fill="#8a7ac5" font-size="11" font-weight="700" letter-spacing="1.5">SOURCE</text>
+      <text x="104" y="606" fill="#28263b" font-size="19" font-weight="700">GitHub：保存网站代码</text>
+
+      <rect x="540" y="542" width="360" height="82" rx="18" fill="#fff" stroke="#eee2d8" />
+      <text x="572" y="577" fill="#c76720" font-size="11" font-weight="700" letter-spacing="1.5">BUILD</text>
+      <text x="572" y="606" fill="#28263b" font-size="19" font-weight="700">Workers Builds：构建和部署</text>
+
+      <rect x="1008" y="542" width="360" height="82" rx="18" fill="#fff" stroke="#eee2d8" />
+      <text x="1040" y="577" fill="#8a7ac5" font-size="11" font-weight="700" letter-spacing="1.5">RUNTIME</text>
+      <text x="1040" y="606" fill="#28263b" font-size="19" font-weight="700">Worker：运行更新后的程序</text>
+    </g>
+
+    <path d="M440 583h88m380 0h88" fill="none" stroke="#d49a6e" stroke-width="3" marker-end="url(#arrow)" />
+  </g>
+</svg>

@@ -1,16 +1,19 @@
 import type { SiteConfig } from "@/features/config/site-config.schema";
 
 export const blogConfig = {
-  title: "站点名称",
-  author: "作者",
+  title: "hh's Blog",
+  author: "hh",
   description:
-    "这是我的个人网站和博客。在这里，我主要分享与技术和生活相关的内容。欢迎阅读！",
+    "喜欢研究技术，也喜欢把路上遇到的小事认真记下来。这里放文章、项目，以及关于我的更多介绍。",
   social: [
-    { platform: "github", url: "https://github.com/example" },
-    { platform: "email", url: "mailto:example@email.com" },
+    { platform: "github", url: "https://github.com/hhworld666" },
     { platform: "rss", url: "/rss.xml" },
   ],
-  navLinks: [],
+  navLinks: [
+    { label: "关于", href: "/post/about" },
+    { label: "友链", href: "/friend-links" },
+    { label: "GitHub", href: "https://github.com/hhworld666" },
+  ],
   icons: {
     faviconSvg: "/favicon.svg",
     faviconIco: "/favicon.ico",
@@ -21,8 +24,8 @@ export const blogConfig = {
   },
   theme: {
     fuwari: {
-      homeBg: "/images/home-bg.webp",
-      avatar: "/images/avatar.png",
+      homeBg: "/images/hh-home-bg.jpg",
+      avatar: "/images/hh-avatar.png",
       primaryHue: 250,
     },
   },
