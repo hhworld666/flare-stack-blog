@@ -42,6 +42,7 @@ import { Route as PublicAuthVerifyEmailRouteImport } from './routes/_public/_aut
 import { Route as PublicUserProfileRouteImport } from './routes/_public/_user/profile'
 import { Route as PublicUserSubmitFriendLinkRouteImport } from './routes/_public/_user/submit-friend-link'
 import { Route as PublicPostSlugRouteImport } from './routes/_public/post/$slug'
+import { Route as PublicPostsSlugRouteImport } from './routes/_public/posts.$slug'
 import { Route as AdminFriendLinksIndexRouteImport } from './routes/admin/friend-links/index'
 import { Route as AdminMediaIndexRouteImport } from './routes/admin/media/index'
 import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
@@ -221,6 +222,11 @@ const PublicPostSlugRoute = PublicPostSlugRouteImport.update({
   path: '/post/$slug',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const PublicPostsSlugRoute = PublicPostsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PublicPostsRoute,
+} as any)
 const AdminFriendLinksIndexRoute = AdminFriendLinksIndexRouteImport.update({
   id: '/friend-links/',
   path: '/friend-links/',
@@ -309,7 +315,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRouteRouteWithChildren
   '/$': typeof PublicSplatRoute
   '/friend-links': typeof PublicFriendLinksRoute
-  '/posts': typeof PublicPostsRoute
+  '/posts': typeof PublicPostsRouteWithChildren
   '/search': typeof PublicSearchRoute
   '/unsubscribe': typeof PublicUnsubscribeRoute
   '/admin/$': typeof AdminSplatRoute
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof PublicUserProfileRoute
   '/submit-friend-link': typeof PublicUserSubmitFriendLinkRoute
   '/post/$slug': typeof PublicPostSlugRoute
+  '/posts/$slug': typeof PublicPostsSlugRoute
   '/admin/settings/api-keys': typeof AdminSettingsApiKeysRoute
   '/admin/settings/maintenance': typeof AdminSettingsMaintenanceRoute
   '/admin/settings/muted-users': typeof AdminSettingsMutedUsersRoute
@@ -352,7 +359,7 @@ export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/$': typeof PublicSplatRoute
   '/friend-links': typeof PublicFriendLinksRoute
-  '/posts': typeof PublicPostsRoute
+  '/posts': typeof PublicPostsRouteWithChildren
   '/search': typeof PublicSearchRoute
   '/unsubscribe': typeof PublicUnsubscribeRoute
   '/admin/$': typeof AdminSplatRoute
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/profile': typeof PublicUserProfileRoute
   '/submit-friend-link': typeof PublicUserSubmitFriendLinkRoute
   '/post/$slug': typeof PublicPostSlugRoute
+  '/posts/$slug': typeof PublicPostsSlugRoute
   '/admin/settings/api-keys': typeof AdminSettingsApiKeysRoute
   '/admin/settings/maintenance': typeof AdminSettingsMaintenanceRoute
   '/admin/settings/muted-users': typeof AdminSettingsMutedUsersRoute
@@ -400,7 +408,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRouteRouteWithChildren
   '/_public/$': typeof PublicSplatRoute
   '/_public/friend-links': typeof PublicFriendLinksRoute
-  '/_public/posts': typeof PublicPostsRoute
+  '/_public/posts': typeof PublicPostsRouteWithChildren
   '/_public/search': typeof PublicSearchRoute
   '/_public/unsubscribe': typeof PublicUnsubscribeRoute
   '/admin/$': typeof AdminSplatRoute
@@ -418,6 +426,7 @@ export interface FileRoutesById {
   '/_public/_user/profile': typeof PublicUserProfileRoute
   '/_public/_user/submit-friend-link': typeof PublicUserSubmitFriendLinkRoute
   '/_public/post/$slug': typeof PublicPostSlugRoute
+  '/_public/posts/$slug': typeof PublicPostsSlugRoute
   '/admin/settings/api-keys': typeof AdminSettingsApiKeysRoute
   '/admin/settings/maintenance': typeof AdminSettingsMaintenanceRoute
   '/admin/settings/muted-users': typeof AdminSettingsMutedUsersRoute
@@ -466,6 +475,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/submit-friend-link'
     | '/post/$slug'
+    | '/posts/$slug'
     | '/admin/settings/api-keys'
     | '/admin/settings/maintenance'
     | '/admin/settings/muted-users'
@@ -509,6 +519,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/submit-friend-link'
     | '/post/$slug'
+    | '/posts/$slug'
     | '/admin/settings/api-keys'
     | '/admin/settings/maintenance'
     | '/admin/settings/muted-users'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/_public/_user/profile'
     | '/_public/_user/submit-friend-link'
     | '/_public/post/$slug'
+    | '/_public/posts/$slug'
     | '/admin/settings/api-keys'
     | '/admin/settings/maintenance'
     | '/admin/settings/muted-users'
@@ -822,6 +834,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicPostSlugRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_public/posts/$slug': {
+      id: '/_public/posts/$slug'
+      path: '/$slug'
+      fullPath: '/posts/$slug'
+      preLoaderRoute: typeof PublicPostsSlugRouteImport
+      parentRoute: typeof PublicPostsRoute
+    }
     '/admin/friend-links/': {
       id: '/admin/friend-links/'
       path: '/friend-links'
@@ -957,12 +976,24 @@ const PublicUserRouteRouteWithChildren = PublicUserRouteRoute._addFileChildren(
   PublicUserRouteRouteChildren,
 )
 
+interface PublicPostsRouteChildren {
+  PublicPostsSlugRoute: typeof PublicPostsSlugRoute
+}
+
+const PublicPostsRouteChildren: PublicPostsRouteChildren = {
+  PublicPostsSlugRoute: PublicPostsSlugRoute,
+}
+
+const PublicPostsRouteWithChildren = PublicPostsRoute._addFileChildren(
+  PublicPostsRouteChildren,
+)
+
 interface PublicRouteRouteChildren {
   PublicAuthRouteRoute: typeof PublicAuthRouteRouteWithChildren
   PublicUserRouteRoute: typeof PublicUserRouteRouteWithChildren
   PublicSplatRoute: typeof PublicSplatRoute
   PublicFriendLinksRoute: typeof PublicFriendLinksRoute
-  PublicPostsRoute: typeof PublicPostsRoute
+  PublicPostsRoute: typeof PublicPostsRouteWithChildren
   PublicSearchRoute: typeof PublicSearchRoute
   PublicUnsubscribeRoute: typeof PublicUnsubscribeRoute
   PublicIndexRoute: typeof PublicIndexRoute
@@ -974,7 +1005,7 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicUserRouteRoute: PublicUserRouteRouteWithChildren,
   PublicSplatRoute: PublicSplatRoute,
   PublicFriendLinksRoute: PublicFriendLinksRoute,
-  PublicPostsRoute: PublicPostsRoute,
+  PublicPostsRoute: PublicPostsRouteWithChildren,
   PublicSearchRoute: PublicSearchRoute,
   PublicUnsubscribeRoute: PublicUnsubscribeRoute,
   PublicIndexRoute: PublicIndexRoute,
