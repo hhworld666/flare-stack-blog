@@ -8,14 +8,20 @@ import { useAdminChrome } from "@/components/admin/admin-chrome";
 import { Editor } from "@/components/tiptap-editor";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { categoryOptionsQuery } from "@/features/categories/queries";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_FILE_SIZE,
+} from "@/features/media/media.schema";
 import { tagsAdminQueryOptions } from "@/features/tags/queries";
 import { extensions } from "@/features/posts/editor/config";
 import { CodeBlockHighlightProvider } from "@/features/posts/editor/extensions/code-block/code-block-highlight-context";
 import { postContentOf } from "@/features/posts/editor/extensions/image-placeholder";
 import {
+  matchMarkdownImageFiles,
   parseMarkdownImport,
   type MarkdownImportDocument,
 } from "@/features/posts/editor/extensions/markdown-paste/markdown-import";
+import type { ResolvedMarkdownImage } from "@/features/posts/editor/extensions/markdown-paste/parse-markdown";
 import { postRevisionListQuery } from "@/features/posts/queries";
 import { isPostBodyEmpty } from "@/features/posts/utils/is-post-body-empty";
 import { normalizePostContent } from "@/features/posts/utils/normalize-content";
@@ -28,10 +34,63 @@ import { PostEditorMetadata } from "./post-editor-metadata";
 import { PostEditorInfoPanel } from "./post-editor-info-panel";
 import { PostEditorSummary } from "./post-editor-summary";
 import type { PostEditorData, PostEditorProps } from "./types";
+import { orpc, orpcClient } from "@/lib/orpc";
 
 interface PendingMarkdownImport {
   fileName: string;
+  markdownPath: string;
+  source: string;
   document: MarkdownImportDocument;
+  imageFiles: Array<File>;
+}
+
+async function uploadMarkdownImages(
+  files: Array<File>,
+  onProgress: (completed: number, total: number) => void,
+) {
+  const uploaded = new Map<File, ResolvedMarkdownImage>();
+  const failed = new Set<File>();
+  let nextIndex = 0;
+  let completed = 0;
+
+  const uploadNext = async () => {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= files.length) return;
+
+      const file = files[index];
+      if (!file) continue;
+
+      try {
+        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+          throw new Error("Unsupported image type");
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          throw new Error("Image exceeds the upload size limit");
+        }
+
+        const result = await orpcClient.media.upload({ image: file });
+        uploaded.set(file, {
+          url: result.url,
+          width: result.width ?? undefined,
+          height: result.height ?? undefined,
+        });
+      } catch (error) {
+        failed.add(file);
+        console.error(`Markdown image upload failed: ${file.name}`, error);
+      } finally {
+        completed += 1;
+        onProgress(completed, files.length);
+      }
+    }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(3, files.length) }, () => uploadNext()),
+  );
+
+  return { uploaded, failed };
 }
 
 function markdownImportReplacesExistingData(
@@ -116,6 +175,7 @@ export function PostEditor({
 
   const editorRef = useRef<TiptapEditor | null>(null);
   const markdownFileInputRef = useRef<HTMLInputElement | null>(null);
+  const markdownFolderInputRef = useRef<HTMLInputElement | null>(null);
   const editorContentRef = useRef(editorContent);
   const postRef = useRef(post);
   editorContentRef.current = editorContent;
@@ -210,12 +270,18 @@ export function PostEditor({
     markdownFileInputRef.current?.click();
   }, []);
 
+  const openMarkdownFolderImport = useCallback(() => {
+    const input = markdownFolderInputRef.current;
+    if (!input) return;
+    input.setAttribute("webkitdirectory", "");
+    input.click();
+  }, []);
+
   const applyMarkdownImport = useCallback(
-    async (
-      { fileName, document }: PendingMarkdownImport,
-      confirmed = false,
-    ) => {
+    async (pending: PendingMarkdownImport, confirmed = false) => {
+      const { fileName, markdownPath, source, document, imageFiles } = pending;
       setIsImportingMarkdown(true);
+      let imageUploadToastId: string | number | undefined;
       try {
         const updates: Partial<PostEditorData> = {};
         const warnings: Array<string> = [];
@@ -302,7 +368,7 @@ export function PostEditor({
             currentContent,
           )
         ) {
-          setPendingMarkdownImport({ fileName, document });
+          setPendingMarkdownImport(pending);
           return;
         }
 
@@ -326,8 +392,58 @@ export function PostEditor({
             latestContent,
           )
         ) {
-          setPendingMarkdownImport({ fileName, document });
+          setPendingMarkdownImport(pending);
           return;
+        }
+
+        let importedDocument = document;
+        if (document.localImageSources.length > 0 && imageFiles.length > 0) {
+          const imageMatches = matchMarkdownImageFiles(
+            document.localImageSources,
+            imageFiles,
+            markdownPath,
+          );
+          const referencedFiles = [...new Set(imageMatches.bySource.values())];
+
+          if (referencedFiles.length > 0) {
+            imageUploadToastId = toast.loading(
+              m.editor_markdown_import_upload_progress({
+                current: 0,
+                total: referencedFiles.length,
+              }),
+            );
+            const uploadResults = await uploadMarkdownImages(
+              referencedFiles,
+              (current, total) => {
+                toast.loading(
+                  m.editor_markdown_import_upload_progress({ current, total }),
+                  { id: imageUploadToastId },
+                );
+              },
+            );
+            const resolvedImages = new Map<string, ResolvedMarkdownImage>();
+            for (const [source, file] of imageMatches.bySource) {
+              const uploaded = uploadResults.uploaded.get(file);
+              if (uploaded) resolvedImages.set(source, uploaded);
+            }
+
+            importedDocument = parseMarkdownImport(source, {
+              resolveLocalImage: (imageSource) =>
+                resolvedImages.get(imageSource),
+            });
+            if (uploadResults.uploaded.size > 0) {
+              void queryClient.invalidateQueries({
+                queryKey: orpc.media.key(),
+              });
+            }
+          }
+        }
+        if (importedDocument.localImageCount > 0) {
+          warnings.push(
+            m.editor_markdown_import_images_missing({
+              count: importedDocument.localImageCount,
+            }),
+          );
         }
 
         const editor = editorRef.current;
@@ -337,7 +453,7 @@ export function PostEditor({
         }
 
         const contentSet = editor.commands.setContent(
-          { type: "doc", content: document.content },
+          { type: "doc", content: importedDocument.content },
           { emitUpdate: true },
         );
         if (!contentSet) {
@@ -356,13 +472,6 @@ export function PostEditor({
             description: warnings.join(" · "),
           });
         }
-        if (document.localImageCount > 0) {
-          toast.warning(
-            m.editor_markdown_paste_local_images({
-              count: document.localImageCount,
-            }),
-          );
-        }
       } catch (error) {
         console.error("Markdown import failed:", error);
         toast.error(
@@ -373,33 +482,71 @@ export function PostEditor({
             : undefined,
         );
       } finally {
+        if (imageUploadToastId !== undefined) {
+          toast.dismiss(imageUploadToastId);
+        }
         setIsImportingMarkdown(false);
       }
     },
     [flush, handlePostChange, queryClient],
   );
 
-  const handleMarkdownFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.currentTarget.files?.[0];
+  const handleMarkdownFilesChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>, fromFolder = false) => {
+      const files = Array.from(event.currentTarget.files ?? []);
       event.currentTarget.value = "";
-      if (!file) return;
+      if (files.length === 0) return;
 
-      if (!/\.(?:md|markdown)$/i.test(file.name)) {
+      const markdownFiles = files.filter((file) =>
+        /\.(?:md|markdown)$/i.test(file.name),
+      );
+      if (markdownFiles.length === 0) {
         toast.error(m.editor_markdown_import_invalid_file());
         return;
       }
+      if (markdownFiles.length > 1) {
+        toast.error(
+          fromFolder
+            ? m.editor_markdown_import_folder_multiple()
+            : m.editor_markdown_import_multiple(),
+        );
+        return;
+      }
+
+      const markdownFile = markdownFiles[0];
+      if (!markdownFile) return;
 
       try {
-        const document = parseMarkdownImport(await file.text());
+        const source = await markdownFile.text();
+        const document = parseMarkdownImport(source);
         const currentPost = postRef.current;
         const editor = editorRef.current;
         const currentContent =
           editor && !editor.isDestroyed
             ? postContentOf(editor.state.doc)
             : editorContentRef.current;
-        const pending = { fileName: file.name, document };
+        const markdownPath =
+          markdownFile.webkitRelativePath || markdownFile.name;
+        const imageFiles = files.filter(
+          (file) =>
+            file !== markdownFile && ACCEPTED_IMAGE_TYPES.includes(file.type),
+        );
+        const hasMatchedImages =
+          matchMarkdownImageFiles(
+            document.localImageSources,
+            imageFiles,
+            markdownPath,
+          ).bySource.size > 0;
+        const pending: PendingMarkdownImport = {
+          fileName: markdownFile.name,
+          markdownPath,
+          source,
+          document,
+          imageFiles,
+        };
+
         if (
+          hasMatchedImages ||
           markdownImportReplacesExistingData(
             document,
             currentPost,
@@ -510,9 +657,18 @@ export function PostEditor({
       <input
         ref={markdownFileInputRef}
         type="file"
-        accept=".md,.markdown,text/markdown"
+        multiple
+        accept={`.md,.markdown,${ACCEPTED_IMAGE_TYPES.join(",")}`}
         className="hidden"
-        onChange={(event) => void handleMarkdownFileChange(event)}
+        onChange={(event) => void handleMarkdownFilesChange(event)}
+      />
+      <input
+        ref={markdownFolderInputRef}
+        type="file"
+        multiple
+        accept={`.md,.markdown,${ACCEPTED_IMAGE_TYPES.join(",")}`}
+        className="hidden"
+        onChange={(event) => void handleMarkdownFilesChange(event, true)}
       />
       <ConfirmationModal
         isOpen={pendingMarkdownImport !== null}
@@ -548,6 +704,7 @@ export function PostEditor({
           onOpenInfo={() => setInfoOpen((value) => !value)}
           onOpenHistory={() => void openHistory()}
           onImportMarkdown={openMarkdownImport}
+          onImportMarkdownFolder={openMarkdownFolderImport}
         />
         <div className="post-editor-body">
           <CodeBlockHighlightProvider

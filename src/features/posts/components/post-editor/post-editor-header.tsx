@@ -5,6 +5,7 @@ import {
   ExternalLink,
   EyeOff,
   FileUp,
+  FolderUp,
   Trash2,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -34,6 +35,7 @@ interface PostEditorHeaderProps {
   infoOpen: boolean;
   onOpenHistory: () => void;
   onImportMarkdown: () => void;
+  onImportMarkdownFolder: () => void;
 }
 
 function saveLabel(saveStatus: SaveStatus, lastSaved: Date | null) {
@@ -73,6 +75,7 @@ export function PostEditorHeader({
   infoOpen,
   onOpenHistory,
   onImportMarkdown,
+  onImportMarkdownFolder,
 }: PostEditorHeaderProps) {
   const [returnLocation] = useState(readPostListLocation);
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -85,6 +88,12 @@ export function PostEditorHeader({
     icon: FileUp,
     disabled: busy,
     onSelect: () => onImportMarkdown(),
+  });
+  actions.push({
+    label: m.editor_markdown_import_folder_button(),
+    icon: FolderUp,
+    disabled: busy,
+    onSelect: () => onImportMarkdownFolder(),
   });
   if (publicSlug)
     actions.push({

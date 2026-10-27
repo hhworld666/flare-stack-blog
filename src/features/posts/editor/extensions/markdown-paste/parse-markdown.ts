@@ -172,6 +172,46 @@ function minHeadingLevel(nodes: Array<JSONContent>): number {
 interface NormalizeContext {
   headingOffset: number;
   localImageCount: number;
+  onLocalImage?: (src: string) => void;
+  resolveLocalImage?: (src: string) => ResolvedMarkdownImage | undefined;
+}
+
+export interface ResolvedMarkdownImage {
+  url: string;
+  width?: number;
+  height?: number;
+}
+
+export interface ParsePastedMarkdownOptions {
+  /** Resolves an image source from the Markdown file to its uploaded URL. */
+  resolveLocalImage?: (src: string) => ResolvedMarkdownImage | undefined;
+  /** Receives unresolved local image paths while parsing. */
+  onLocalImage?: (src: string) => void;
+}
+
+function normalizeImage(
+  node: JSONContent,
+  context: NormalizeContext,
+): JSONContent | null {
+  if (isRemoteImage(node)) return node;
+
+  const src = String(node.attrs?.src ?? "");
+  const uploaded = context.resolveLocalImage?.(src);
+  if (uploaded) {
+    return {
+      ...node,
+      attrs: {
+        ...node.attrs,
+        src: uploaded.url,
+        width: uploaded.width ?? node.attrs?.width,
+        height: uploaded.height ?? node.attrs?.height,
+      },
+    };
+  }
+
+  context.localImageCount += 1;
+  context.onLocalImage?.(src);
+  return null;
 }
 
 function normalizeInline(
@@ -180,8 +220,7 @@ function normalizeInline(
 ): Array<JSONContent> {
   return nodes.map((node) => {
     if (node.type !== "image") return node;
-    if (!isRemoteImage(node)) context.localImageCount += 1;
-    return imageAsText(node);
+    return normalizeImage(node, context) ?? imageAsText(node);
   });
 }
 
@@ -205,12 +244,14 @@ function splitParagraph(
   for (const node of content) {
     if (node.type !== "image") {
       run.push(node);
-    } else if (isRemoteImage(node)) {
-      flush();
-      blocks.push(node);
     } else {
-      context.localImageCount += 1;
-      run.push(imageAsText(node));
+      const image = normalizeImage(node, context);
+      if (!image) {
+        run.push(imageAsText(node));
+        continue;
+      }
+      flush();
+      blocks.push(image);
     }
   }
   flush();
@@ -223,10 +264,12 @@ function normalizeBlocks(
 ): Array<JSONContent> {
   return blocks.flatMap((block): Array<JSONContent> => {
     switch (block.type) {
-      case "image":
-        if (isRemoteImage(block)) return [block];
-        context.localImageCount += 1;
-        return [{ type: "paragraph", content: [imageAsText(block)] }];
+      case "image": {
+        const image = normalizeImage(block, context);
+        return image
+          ? [image]
+          : [{ type: "paragraph", content: [imageAsText(block)] }];
+      }
       case "paragraph":
         return splitParagraph(block, context);
       case "heading": {
@@ -266,13 +309,18 @@ export interface PastedMarkdown {
   localImageCount: number;
 }
 
-export function parsePastedMarkdown(markdown: string): PastedMarkdown {
+export function parsePastedMarkdown(
+  markdown: string,
+  options: ParsePastedMarkdownOptions = {},
+): PastedMarkdown {
   const parsed = getManager().parse(markdown.replace(FRONT_MATTER, ""));
   const content = parsed.content ?? [];
   const minLevel = minHeadingLevel(content);
   const context: NormalizeContext = {
     headingOffset: Number.isFinite(minLevel) ? MIN_HEADING_LEVEL - minLevel : 0,
     localImageCount: 0,
+    onLocalImage: options.onLocalImage,
+    resolveLocalImage: options.resolveLocalImage,
   };
 
   return {

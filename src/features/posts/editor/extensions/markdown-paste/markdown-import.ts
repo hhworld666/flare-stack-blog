@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
 import { parsePastedMarkdown } from "./parse-markdown";
+import type { ParsePastedMarkdownOptions } from "./parse-markdown";
 
 export interface MarkdownImportMetadata {
   title?: string;
@@ -14,6 +15,99 @@ export interface MarkdownImportDocument {
   metadata: MarkdownImportMetadata;
   content: Array<JSONContent>;
   localImageCount: number;
+  localImageSources: Array<string>;
+}
+
+export type MarkdownImportOptions = Pick<
+  ParsePastedMarkdownOptions,
+  "resolveLocalImage"
+>;
+
+export interface MarkdownImageFileMatches {
+  bySource: Map<string, File>;
+  unmatchedSources: Array<string>;
+}
+
+function normalizeAssetPath(rawPath: string) {
+  let decodedPath = rawPath.split(/[?#]/, 1)[0] ?? rawPath;
+  try {
+    decodedPath = decodeURIComponent(decodedPath);
+  } catch {
+    // Keep the original path if it contains invalid percent encoding.
+  }
+
+  decodedPath = decodedPath
+    .replace(/^file:\/*/i, "")
+    .replace(/\\/g, "/")
+    .replace(/^[A-Za-z]:\/?/, "")
+    .replace(/^\/+/, "");
+
+  const segments: Array<string> = [];
+  for (const segment of decodedPath.split("/")) {
+    if (!segment || segment === ".") continue;
+    if (segment === "..") segments.pop();
+    else segments.push(segment);
+  }
+  return segments.join("/").toLocaleLowerCase();
+}
+
+function markdownImageTargetPath(markdownPath: string, source: string) {
+  const normalizedSource = source.replace(/\\/g, "/");
+  if (/^(?:\/|[A-Za-z]:\/)/.test(normalizedSource)) {
+    return normalizeAssetPath(normalizedSource);
+  }
+
+  const directory = normalizeAssetPath(markdownPath)
+    .split("/")
+    .slice(0, -1)
+    .join("/");
+  return normalizeAssetPath(
+    directory ? `${directory}/${normalizedSource}` : normalizedSource,
+  );
+}
+
+/** Matches local Markdown image paths to files selected with the Markdown file. */
+export function matchMarkdownImageFiles(
+  sources: Array<string>,
+  files: Array<File>,
+  markdownPath: string,
+): MarkdownImageFileMatches {
+  const candidates = files.map((file) => ({
+    file,
+    path: normalizeAssetPath(file.webkitRelativePath || file.name),
+  }));
+  const bySource = new Map<string, File>();
+  const unmatchedSources: Array<string> = [];
+
+  for (const source of new Set(sources)) {
+    const sourcePath = normalizeAssetPath(source);
+    const targetPath = markdownImageTargetPath(markdownPath, source);
+    const sourceName = sourcePath.split("/").pop();
+    const targetName = targetPath.split("/").pop();
+
+    const exactTarget = candidates.filter(({ path }) => path === targetPath);
+    const exactSource = candidates.filter(({ path }) => path === sourcePath);
+    const pathSuffix = candidates.filter(
+      ({ path }) =>
+        path.endsWith(`/${targetPath}`) || path.endsWith(`/${sourcePath}`),
+    );
+    const basenameMatches = candidates.filter(
+      ({ path }) => path.split("/").pop() === (targetName || sourceName),
+    );
+    const matches =
+      exactTarget.length > 0
+        ? exactTarget
+        : exactSource.length > 0
+          ? exactSource
+          : pathSuffix.length > 0
+            ? pathSuffix
+            : basenameMatches;
+
+    if (matches.length === 1) bySource.set(source, matches[0].file);
+    else unmatchedSources.push(source);
+  }
+
+  return { bySource, unmatchedSources };
 }
 
 const FRONT_MATTER =
@@ -217,18 +311,26 @@ function parseFrontMatter(source: string): MarkdownImportMetadata {
   return metadata;
 }
 
-export function parseMarkdownImport(source: string): MarkdownImportDocument {
+export function parseMarkdownImport(
+  source: string,
+  options: MarkdownImportOptions = {},
+): MarkdownImportDocument {
   const frontMatter = FRONT_MATTER.exec(source);
   if (!frontMatter && FRONT_MATTER_START.test(source)) {
     throw new Error("Invalid Markdown front matter");
   }
 
   const body = frontMatter ? source.slice(frontMatter[0].length) : source;
-  const parsed = parsePastedMarkdown(body);
+  const localImageSources: Array<string> = [];
+  const parsed = parsePastedMarkdown(body, {
+    ...options,
+    onLocalImage: (src) => localImageSources.push(src),
+  });
 
   return {
     metadata: parseFrontMatter(source),
     content: parsed.content,
     localImageCount: parsed.localImageCount,
+    localImageSources,
   };
 }
