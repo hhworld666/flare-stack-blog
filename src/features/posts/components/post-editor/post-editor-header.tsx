@@ -1,5 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, ExternalLink, EyeOff, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ExternalLink,
+  EyeOff,
+  FileUp,
+  Trash2,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { ActionMenu, type ActionMenuItem } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
@@ -26,6 +33,7 @@ interface PostEditorHeaderProps {
   onOpenInfo: () => void;
   infoOpen: boolean;
   onOpenHistory: () => void;
+  onImportMarkdown: () => void;
 }
 
 function saveLabel(saveStatus: SaveStatus, lastSaved: Date | null) {
@@ -64,6 +72,7 @@ export function PostEditorHeader({
   onOpenInfo,
   infoOpen,
   onOpenHistory,
+  onImportMarkdown,
 }: PostEditorHeaderProps) {
   const [returnLocation] = useState(readPostListLocation);
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -71,6 +80,12 @@ export function PostEditorHeader({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const busy = processState !== "IDLE";
   const actions: Array<ActionMenuItem> = [];
+  actions.push({
+    label: m.editor_markdown_import_button(),
+    icon: FileUp,
+    disabled: busy,
+    onSelect: () => onImportMarkdown(),
+  });
   if (publicSlug)
     actions.push({
       label: m.admin_posts_action_view_live(),

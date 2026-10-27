@@ -1,15 +1,23 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 import type { JSONContent, Editor as TiptapEditor } from "@tiptap/react";
+import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAdminChrome } from "@/components/admin/admin-chrome";
 import { Editor } from "@/components/tiptap-editor";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
+import { categoryOptionsQuery } from "@/features/categories/queries";
+import { tagsAdminQueryOptions } from "@/features/tags/queries";
 import { extensions } from "@/features/posts/editor/config";
 import { CodeBlockHighlightProvider } from "@/features/posts/editor/extensions/code-block/code-block-highlight-context";
 import { postContentOf } from "@/features/posts/editor/extensions/image-placeholder";
+import {
+  parseMarkdownImport,
+  type MarkdownImportDocument,
+} from "@/features/posts/editor/extensions/markdown-paste/markdown-import";
 import { postRevisionListQuery } from "@/features/posts/queries";
+import { isPostBodyEmpty } from "@/features/posts/utils/is-post-body-empty";
 import { normalizePostContent } from "@/features/posts/utils/normalize-content";
 import { m } from "@/paraglide/messages";
 import { useDeletePost } from "../post-manager/hooks";
@@ -20,6 +28,58 @@ import { PostEditorMetadata } from "./post-editor-metadata";
 import { PostEditorInfoPanel } from "./post-editor-info-panel";
 import { PostEditorSummary } from "./post-editor-summary";
 import type { PostEditorData, PostEditorProps } from "./types";
+
+interface PendingMarkdownImport {
+  fileName: string;
+  document: MarkdownImportDocument;
+}
+
+function markdownImportReplacesExistingData(
+  document: MarkdownImportDocument,
+  post: PostEditorData,
+  content: JSONContent | null,
+) {
+  const imported = document.metadata;
+  return (
+    !isPostBodyEmpty(content) ||
+    (imported.title !== undefined && Boolean(post.title.trim())) ||
+    (imported.summary !== undefined && Boolean(post.summary.trim())) ||
+    (imported.slug !== undefined && Boolean(post.slug.trim())) ||
+    (imported.category !== undefined && post.categoryId !== null) ||
+    (imported.tags !== undefined && post.tagIds.length > 0) ||
+    (imported.date !== undefined && post.publishedAt !== null)
+  );
+}
+
+function parseMarkdownDate(
+  value: string,
+  today: string,
+): { date?: Date; issue?: "invalid" | "future" } {
+  const trimmed = value.trim();
+  let dateOnly: string;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const parsed = new Date(`${trimmed}T12:00:00.000Z`);
+    if (
+      !Number.isFinite(parsed.valueOf()) ||
+      parsed.toISOString().slice(0, 10) !== trimmed
+    ) {
+      return { issue: "invalid" };
+    }
+    dateOnly = trimmed;
+  } else {
+    const normalized = trimmed.replace(
+      /^(\d{4}-\d{2}-\d{2})[ \t]+(?=\d{2}:\d{2})/,
+      "$1T",
+    );
+    const parsed = new Date(normalized);
+    if (!Number.isFinite(parsed.valueOf())) return { issue: "invalid" };
+    dateOnly = parsed.toISOString().slice(0, 10);
+  }
+
+  if (dateOnly > today) return { issue: "future" };
+  return { date: new Date(`${dateOnly}T12:00:00.000Z`) };
+}
 
 export function PostEditor({
   initialData,
@@ -50,10 +110,16 @@ export function PostEditor({
   );
   const [contentEpoch, setContentEpoch] = useState(0);
   const [editorRenderKey] = useState(`editor:${initialData.id}`);
+  const [pendingMarkdownImport, setPendingMarkdownImport] =
+    useState<PendingMarkdownImport | null>(null);
+  const [isImportingMarkdown, setIsImportingMarkdown] = useState(false);
 
   const editorRef = useRef<TiptapEditor | null>(null);
+  const markdownFileInputRef = useRef<HTMLInputElement | null>(null);
   const editorContentRef = useRef(editorContent);
+  const postRef = useRef(post);
   editorContentRef.current = editorContent;
+  postRef.current = post;
 
   const getContent = useCallback(() => {
     const editor = editorRef.current;
@@ -138,6 +204,222 @@ export function PostEditor({
       setPost((prev) => ({ ...prev, ...updates }));
     },
     [lockSlug],
+  );
+
+  const openMarkdownImport = useCallback(() => {
+    markdownFileInputRef.current?.click();
+  }, []);
+
+  const applyMarkdownImport = useCallback(
+    async (
+      { fileName, document }: PendingMarkdownImport,
+      confirmed = false,
+    ) => {
+      setIsImportingMarkdown(true);
+      try {
+        const updates: Partial<PostEditorData> = {};
+        const warnings: Array<string> = [];
+        const metadata = document.metadata;
+
+        if (metadata.title !== undefined) updates.title = metadata.title;
+        if (metadata.summary !== undefined) updates.summary = metadata.summary;
+        if (metadata.slug !== undefined) updates.slug = metadata.slug;
+
+        if (metadata.category !== undefined) {
+          if (metadata.category === null) {
+            updates.categoryId = null;
+          } else {
+            const categories =
+              await queryClient.ensureQueryData(categoryOptionsQuery);
+            const category = categories.find(
+              (item) =>
+                item.name.trim().toLocaleLowerCase() ===
+                metadata.category?.trim().toLocaleLowerCase(),
+            );
+            if (category) updates.categoryId = category.id;
+            else {
+              warnings.push(
+                m.editor_markdown_import_category_missing({
+                  category: metadata.category,
+                }),
+              );
+            }
+          }
+        }
+
+        if (metadata.tags !== undefined) {
+          if (metadata.tags.length === 0) {
+            updates.tagIds = [];
+          } else {
+            const tags = await queryClient.ensureQueryData(
+              tagsAdminQueryOptions(),
+            );
+            const matchedIds = new Set<number>();
+            const missingNames: Array<string> = [];
+            for (const name of metadata.tags) {
+              const tag = tags.find(
+                (item) =>
+                  item.name.trim().toLocaleLowerCase() ===
+                  name.trim().toLocaleLowerCase(),
+              );
+              if (tag) matchedIds.add(tag.id);
+              else missingNames.push(name);
+            }
+            updates.tagIds = [...matchedIds];
+            if (missingNames.length > 0) {
+              warnings.push(
+                m.editor_markdown_import_tags_missing({
+                  tags: [...new Set(missingNames)].join(", "),
+                }),
+              );
+            }
+          }
+        }
+
+        if (metadata.date !== undefined) {
+          const result = parseMarkdownDate(
+            metadata.date,
+            postRef.current.serverToday,
+          );
+          if (result.date) updates.publishedAt = result.date;
+          else if (result.issue === "future") {
+            warnings.push(m.editor_markdown_import_date_future());
+          } else {
+            warnings.push(m.editor_markdown_import_date_invalid());
+          }
+        }
+
+        const currentEditor = editorRef.current;
+        const currentContent =
+          currentEditor && !currentEditor.isDestroyed
+            ? postContentOf(currentEditor.state.doc)
+            : editorContentRef.current;
+        if (
+          !confirmed &&
+          markdownImportReplacesExistingData(
+            document,
+            postRef.current,
+            currentContent,
+          )
+        ) {
+          setPendingMarkdownImport({ fileName, document });
+          return;
+        }
+
+        try {
+          await flush();
+        } catch {
+          toast.error(m.editor_status_save_error());
+          return;
+        }
+
+        const latestEditor = editorRef.current;
+        const latestContent =
+          latestEditor && !latestEditor.isDestroyed
+            ? postContentOf(latestEditor.state.doc)
+            : editorContentRef.current;
+        if (
+          !confirmed &&
+          markdownImportReplacesExistingData(
+            document,
+            postRef.current,
+            latestContent,
+          )
+        ) {
+          setPendingMarkdownImport({ fileName, document });
+          return;
+        }
+
+        const editor = editorRef.current;
+        if (!editor || editor.isDestroyed) {
+          toast.error(m.editor_markdown_import_failed());
+          return;
+        }
+
+        const contentSet = editor.commands.setContent(
+          { type: "doc", content: document.content },
+          { emitUpdate: true },
+        );
+        if (!contentSet) {
+          toast.error(m.editor_markdown_import_failed());
+          return;
+        }
+
+        if (Object.keys(updates).length > 0) handlePostChange(updates);
+
+        setPendingMarkdownImport(null);
+        toast.success(m.editor_markdown_import_success(), {
+          description: fileName,
+        });
+        if (warnings.length > 0) {
+          toast.warning(m.editor_markdown_import_partial(), {
+            description: warnings.join(" · "),
+          });
+        }
+        if (document.localImageCount > 0) {
+          toast.warning(
+            m.editor_markdown_paste_local_images({
+              count: document.localImageCount,
+            }),
+          );
+        }
+      } catch (error) {
+        console.error("Markdown import failed:", error);
+        toast.error(
+          m.editor_markdown_import_failed(),
+          error instanceof Error &&
+            error.message === "Invalid Markdown front matter"
+            ? { description: m.editor_markdown_import_invalid_frontmatter() }
+            : undefined,
+        );
+      } finally {
+        setIsImportingMarkdown(false);
+      }
+    },
+    [flush, handlePostChange, queryClient],
+  );
+
+  const handleMarkdownFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.currentTarget.files?.[0];
+      event.currentTarget.value = "";
+      if (!file) return;
+
+      if (!/\.(?:md|markdown)$/i.test(file.name)) {
+        toast.error(m.editor_markdown_import_invalid_file());
+        return;
+      }
+
+      try {
+        const document = parseMarkdownImport(await file.text());
+        const currentPost = postRef.current;
+        const editor = editorRef.current;
+        const currentContent =
+          editor && !editor.isDestroyed
+            ? postContentOf(editor.state.doc)
+            : editorContentRef.current;
+        const pending = { fileName: file.name, document };
+        if (
+          markdownImportReplacesExistingData(
+            document,
+            currentPost,
+            currentContent,
+          )
+        ) {
+          setPendingMarkdownImport(pending);
+        } else void applyMarkdownImport(pending);
+      } catch (error) {
+        console.error("Markdown import failed:", error);
+        toast.error(
+          m.editor_markdown_import_failed(),
+          error instanceof Error &&
+            error.message === "Invalid Markdown front matter"
+            ? { description: m.editor_markdown_import_invalid_frontmatter() }
+            : undefined,
+        );
+      }
+    },
+    [applyMarkdownImport],
   );
 
   const openHistory = useCallback(async () => {
@@ -225,6 +507,29 @@ export function PostEditor({
         message={m.editor_leave_message()}
         confirmLabel={m.editor_leave_confirm()}
       />
+      <input
+        ref={markdownFileInputRef}
+        type="file"
+        accept=".md,.markdown,text/markdown"
+        className="hidden"
+        onChange={(event) => void handleMarkdownFileChange(event)}
+      />
+      <ConfirmationModal
+        isOpen={pendingMarkdownImport !== null}
+        onClose={() => {
+          if (!isImportingMarkdown) setPendingMarkdownImport(null);
+        }}
+        onConfirm={() => {
+          if (pendingMarkdownImport)
+            void applyMarkdownImport(pendingMarkdownImport, true);
+        }}
+        title={m.editor_markdown_import_replace_title()}
+        message={m.editor_markdown_import_replace_message({
+          fileName: pendingMarkdownImport?.fileName ?? "",
+        })}
+        confirmLabel={m.editor_markdown_import_replace_confirm()}
+        isLoading={isImportingMarkdown}
+      />
 
       <section className="post-editor-workspace fuwari-card-base">
         <PostEditorHeader
@@ -242,6 +547,7 @@ export function PostEditor({
           infoOpen={infoOpen}
           onOpenInfo={() => setInfoOpen((value) => !value)}
           onOpenHistory={() => void openHistory()}
+          onImportMarkdown={openMarkdownImport}
         />
         <div className="post-editor-body">
           <CodeBlockHighlightProvider
