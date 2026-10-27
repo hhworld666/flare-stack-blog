@@ -15,7 +15,8 @@
     "src/routeTree.gen.ts",
     ".cloudflare/**",
     "migrations/**",
-    "dist/**"
+    "dist/**",
+    "vendor/**"
   ],
   "env": {
     "builtin": true
