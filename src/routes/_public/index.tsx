@@ -1,5 +1,9 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  redirect,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { z } from "zod";
 import { getHomeBackgroundPreloadImages } from "@/components/layout/preload-images";
 import { siteDomainQuery } from "@/features/config/queries";
@@ -61,12 +65,14 @@ export const Route = createFileRoute("/_public/")({
 
 function HomeRoute() {
   const { page = 1 } = Route.useSearch();
+  const { siteConfig } = useRouteContext({ from: "__root__" });
   const { data } = useSuspenseQuery(homePostsQuery(page));
   const { data: popularPosts } = useSuspenseQuery(
     popularPostsQuery(POPULAR_POSTS_LIMIT),
   );
   return (
     <HomePage
+      announcement={siteConfig.announcement}
       posts={data.items}
       popularPosts={popularPosts}
       page={data.page}

@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { lazy, Suspense, type ComponentType } from "react";
+import { TabTitleBehavior } from "@/components/common/tab-title-behavior";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { getFuwariThemeStyle } from "@/components/layout/document-style";
 import { siteConfigQuery } from "@/features/config/queries";
@@ -130,6 +131,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <TabTitleBehavior />
         <ThemeProvider>{children}</ThemeProvider>
         <ClientOnly>
           <Suspense fallback={null}>

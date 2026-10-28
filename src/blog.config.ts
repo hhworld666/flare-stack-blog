@@ -5,6 +5,7 @@ export const blogConfig = {
   author: "hh",
   description:
     "喜欢研究技术，也喜欢把路上遇到的小事认真记下来。这里放文章、项目，以及关于我的更多介绍。",
+  announcement: "",
   social: [
     { platform: "github", url: "https://github.com/hhworld666" },
     { platform: "rss", url: "/rss.xml" },

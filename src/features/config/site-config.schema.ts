@@ -202,6 +202,7 @@ export const FullSiteConfigSchema = z.object({
   title: createSiteTextSchema(120),
   author: createSiteTextSchema(80),
   description: createSiteTextSchema(300),
+  announcement: createSiteTextSchema(1200),
   social: z.array(SocialLinkSchema),
   navLinks: z.array(NavLinkSchema).max(NAV_LINKS_MAX),
   icons: z.object({
@@ -222,6 +223,7 @@ export function createSiteConfigInputFormSchema(messages: Messages) {
     title: createSiteTextFormSchema(120, messages).optional(),
     author: createSiteTextFormSchema(80, messages).optional(),
     description: createSiteTextFormSchema(300, messages).optional(),
+    announcement: createSiteTextFormSchema(1200, messages).optional(),
     social: z.array(SocialLinkSchema).optional(),
     navLinks: createNavLinksFormSchema(messages).optional(),
     icons: z
@@ -246,6 +248,7 @@ export const SiteConfigInputSchema = z.object({
   title: createSiteTextSchema(120).optional(),
   author: createSiteTextSchema(80).optional(),
   description: createSiteTextSchema(300).optional(),
+  announcement: createSiteTextSchema(1200).optional(),
   social: z.array(SocialLinkSchema).optional(),
   navLinks: z.array(NavLinkSchema).max(NAV_LINKS_MAX).optional(),
   icons: z

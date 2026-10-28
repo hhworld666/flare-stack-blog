@@ -50,6 +50,7 @@ export function resolveSiteConfig(
     title: config?.site?.title ?? blogConfig.title,
     author: config?.site?.author ?? blogConfig.author,
     description: config?.site?.description ?? blogConfig.description,
+    announcement: config?.site?.announcement ?? blogConfig.announcement,
     social: migrateSocial(config?.site?.social),
     navLinks: normalizeNavLinks(config?.site?.navLinks),
     icons: {

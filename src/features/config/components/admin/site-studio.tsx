@@ -14,7 +14,7 @@ import { useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
-import { Input } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { OverlayUpload } from "@/features/config/components/admin/overlay-upload";
 import type { SystemConfig } from "@/features/config/config.schema";
@@ -198,6 +198,21 @@ export function SiteStudio() {
           />
           <output htmlFor="theme-hue-slider">{hue}°</output>
         </div>
+      </section>
+      <section className="site-theme-row site-announcement-row">
+        <div className="site-section-copy">
+          <label htmlFor="site-announcement">
+            {m.settings_site_announcement_title()}
+          </label>
+          <p>{m.settings_site_announcement_hint()}</p>
+        </div>
+        <Textarea
+          id="site-announcement"
+          {...register("site.announcement")}
+          rows={4}
+          maxLength={1200}
+          placeholder={m.settings_site_announcement_ph()}
+        />
       </section>
       <NavLinksEditor />
       <SettingsDisclosure

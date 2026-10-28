@@ -173,6 +173,9 @@
   padding: calc(24 * var(--admin-unit)) 0;
   border-top: 1px solid var(--admin-rule);
 }
+.site-announcement-row {
+  align-items: start;
+}
 .site-hue-control {
   display: flex;
   align-items: center;
