@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_public/")({
       canonicalHref: buildCanonicalUrl(domain, "/", {
         page: posts.page === 1 ? undefined : String(posts.page),
       }),
-      preloadImages: getHomeBackgroundPreloadImages(context.siteConfig),
+      preloadImages: getHomeBackgroundPreloadImages(),
     };
   },
   head: ({ loaderData }) => ({

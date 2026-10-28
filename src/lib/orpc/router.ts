@@ -13,7 +13,9 @@ import friendLinksRouter from "@/features/friend-links/server/router";
 import mediaRouter from "@/features/media/server/router";
 import mutedUsersRouter from "@/features/muted-users/server/router";
 import postPopularityRouter from "@/features/post-popularity/server/router";
+import postLikesRouter from "@/features/post-likes/server/router";
 import postsRouter from "@/features/posts/server/router";
+import sitePagesRouter from "@/features/site-pages/server/router";
 import searchRouter from "@/features/search/server/router";
 import tagsRouter from "@/features/tags/server/router";
 import versionRouter from "@/features/version/server/router";
@@ -21,6 +23,8 @@ import webhookRouter from "@/features/webhook/server/router";
 
 export const router = {
   posts: postsRouter,
+  postLikes: postLikesRouter,
+  pages: sitePagesRouter,
   tags: tagsRouter,
   categories: categoriesRouter,
   comments: commentsRouter,

@@ -9,7 +9,8 @@ export type PublicCacheReason =
   | "tag.changed"
   | "category.changed"
   | "friend-links.changed"
-  | "site-config.changed";
+  | "site-config.changed"
+  | "site-pages.changed";
 
 export type PublicCacheReadContext = DbContext & {
   executionCtx: ExecutionContext;

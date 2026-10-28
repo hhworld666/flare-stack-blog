@@ -1,4 +1,5 @@
 import { CACHE_CONTROL } from "@/lib/constants";
+import { sitePageSlugFromPathname } from "@/features/site-pages/site-page-path";
 import type { PublicCacheReason } from "./types";
 
 export type WorkersCachePolicy =
@@ -105,6 +106,10 @@ export function workersCachePolicy(pathname: string): WorkersCachePolicy {
     };
   }
 
+  if (sitePageSlugFromPathname(path)) {
+    return { cache: "public", tags: [HTML_TAG] };
+  }
+
   return { cache: "private" };
 }
 
@@ -116,6 +121,9 @@ export function purgeOptionsFor(
     return { purgeEverything: true };
   }
   if (reason === "site-config.changed") {
+    return { tags: [HTML_TAG] };
+  }
+  if (reason === "site-pages.changed") {
     return { tags: [HTML_TAG] };
   }
   if (reason === "friend-links.changed") {

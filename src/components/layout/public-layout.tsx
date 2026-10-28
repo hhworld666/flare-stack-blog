@@ -15,6 +15,9 @@ import { Footer } from "./footer";
 import { Navbar } from "./navbar";
 import { PageFade } from "./page-fade";
 import { Sidebar } from "./sidebar";
+import { SitePreloader } from "./site-preloader";
+import { HOME_BANNER_IMAGE } from "./preload-images";
+import "./public-layout.css";
 
 const BANNER_HEIGHT_HOME = 65;
 const BANNER_HEIGHT_PAGE = 35;
@@ -50,7 +53,8 @@ export function PublicLayout({
 
   return (
     <FloatingActionsProvider>
-      <div className="relative min-h-screen bg-(--fuwari-page-bg) transition-colors">
+      <SitePreloader />
+      <div className="relative isolate min-h-screen bg-(--fuwari-page-bg) transition-colors">
         {/* Top row: Navbar - sticky */}
         <div className="sticky top-0 z-50 pointer-events-none">
           <div className="pointer-events-auto max-w-(--fuwari-page-width) mx-auto px-0 md:px-4">
@@ -69,15 +73,33 @@ export function PublicLayout({
           className="absolute left-0 right-0 top-0 z-10 overflow-hidden transition-[height] duration-700"
           style={{ height: `${bannerHeightVh}vh` }}
         >
-          <img
-            src={getPublicImageSrc(
-              siteConfig.theme.fuwari.homeBg,
-              PUBLIC_IMAGE_WIDTH.banner,
+          <div
+            className={cn(
+              "public-banner-media",
+              isHomePage && "public-banner-media-home",
             )}
-            alt="banner"
-            fetchPriority={isHomePage ? "high" : "auto"}
-            className="fuwari-banner-image w-full h-full object-cover object-center"
-          />
+          >
+            <img
+              src={
+                isHomePage
+                  ? HOME_BANNER_IMAGE
+                  : getPublicImageSrc(
+                      siteConfig.theme.fuwari.homeBg,
+                      PUBLIC_IMAGE_WIDTH.banner,
+                    )
+              }
+              alt=""
+              aria-hidden="true"
+              fetchPriority={isHomePage ? "high" : "auto"}
+              className={cn(
+                "fuwari-banner-image w-full h-full object-cover",
+                isHomePage ? "public-home-banner-image" : "object-center",
+              )}
+            />
+          </div>
+          {isHomePage ? (
+            <div className="public-home-banner-blend" aria-hidden="true" />
+          ) : null}
         </div>
 
         {/* Main content - overlaps banner by MAIN_OVERLAP_REM */}

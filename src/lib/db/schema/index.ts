@@ -3,6 +3,8 @@ export * from "./comments.table";
 export * from "./config.table";
 export * from "./friend-links.table";
 export * from "./media.table";
+export * from "./post-likes.table";
 export * from "./post-revisions.table";
 export * from "./posts.table";
 export * from "./search.table";
+export * from "./site-pages.table";

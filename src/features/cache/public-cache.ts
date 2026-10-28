@@ -337,6 +337,13 @@ export const invalidate = {
       purgeOptionsFor("site-config.changed", {}),
     );
   },
+  async sitePagesChanged(context: InvalidateContext) {
+    await run("site-pages.changed", context, {});
+    await purgeWorkersCache(
+      context.executionCtx,
+      purgeOptionsFor("site-pages.changed", {}),
+    );
+  },
   async all(context: InvalidateContext) {
     await Promise.all(
       registry.map((entry) => invalidateEntry(entry, context, {})),

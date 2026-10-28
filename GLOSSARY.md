@@ -44,6 +44,10 @@ _Avoid_: Separate published assignment
 A user-authored response attached to a **Post**, public as soon as it is created, whose body is text. The author or an **Admin** can delete it from the public post page; deletion keeps a placeholder in the **Comment Thread** instead of removing the row.
 _Avoid_: Message, pending comment, verifying comment, rich document
 
+**Post Like**:
+A signed-in **User**'s reaction to a **Published Post**. Each User can add or remove one Post Like per Post.
+_Avoid_: Favorite, reaction count as a separate record
+
 **Comment Thread**:
 A root **Comment** plus its direct replies under one **Post**. A thread whose root is deleted and that has no published replies is not shown.
 _Avoid_: Nested comment tree
@@ -63,6 +67,10 @@ _Avoid_: Banner, thumbnail, featured image, hero, OG image, 封面图
 **Friend Link**:
 A submitted or admin-created external site listing that can be approved for display on the public friend-links page.
 _Avoid_: Blogroll, partner link, link exchange
+
+**Site Page**:
+A standalone Markdown page managed by an **Admin** and linked from the public navigation.
+_Avoid_: Category, navigation category
 
 **System Config**:
 The single CMS-wide configuration for site presentation and notification delivery. It contains Site Config and delivery settings; API Keys and the results of maintenance operations are separate.
@@ -134,12 +142,15 @@ _Avoid_: New commit, fork update
 - The public site can list **Published Posts** by **Category**, and can apply a **Category** filter and a **Tag** filter together.
 - A **Post** can have zero or more **Post Revisions**.
 - A **Post** can have zero or more **Comment Threads**.
+- A **Post** can have zero or more **Post Likes**; each belongs to one **User**.
+- A **User** can like a **Published Post** at most once and can remove that **Post Like**.
 - A **Post** can reference zero or more **Media** items.
 - A **Post** has zero or one **Post Cover**.
 - A **Post Cover** is a **Media** item.
 - Publishing a **Post** writes its **Post Cover** into the **Public Content Snapshot**. Autosave does not.
 - Clearing a **Post Cover** does not delete the **Media**.
 - A **Media** item may be both a **Post Cover** and a body image of the same **Post**. Clearing the **Post Cover** does not remove that image from the body; removing it from the body does not clear the **Post Cover**.
+- A **Site Page** has a unique top-level path and appears in public navigation while it exists.
 - Restoring a **Post Revision** restores its **Post Cover**. If that **Media** no longer exists, the restored **Post** has no usable **Post Cover**.
 - Restoring a **Post Revision** restores its **Category**. If that **Category** no longer exists, the restored **Post** has no **Category**.
 - A **Published Post** has a **Public Content Snapshot** for public rendering.
@@ -175,6 +186,7 @@ _Avoid_: New commit, fork update
 - A **Notification Event** does not include the email recipient.
 - A **Notification Event** for a **Comment** links to that **Comment** on the public **Post** page.
 - An **Admin** can manage **Posts**, **Comments**, **Tags**, **Categories**, **Media**, **System Config**, **Friend Links**, **Muted Users**, and **API Keys**.
+- An **Admin** can create, edit, and delete **Site Pages**.
 - An **API Key** belongs to exactly one **Admin**.
 - An **Admin** can have zero or more **API Keys**.
 - An **API Key** authenticates as its owning **Admin** and has that Admin's content-management permissions.

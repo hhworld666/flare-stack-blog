@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Link2,
   LogOut,
+  PanelsTopLeft,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -92,6 +93,12 @@ export function SideBar({
       path: "/admin/posts",
       icon: FileText,
       label: m.admin_sidebar_posts(),
+      exact: false,
+    },
+    {
+      path: "/admin/site-pages",
+      icon: PanelsTopLeft,
+      label: m.admin_sidebar_site_pages(),
       exact: false,
     },
     {

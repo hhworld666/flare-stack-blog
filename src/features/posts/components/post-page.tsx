@@ -3,6 +3,7 @@ import { Clock, FileText, Pencil } from "lucide-react";
 import { useRef } from "react";
 import { PUBLIC_IMAGE_WIDTH } from "@/features/media/utils/media.utils";
 import { CommentSection } from "@/features/comments/components/comment-section";
+import { PostLikeButton } from "@/features/post-likes/components/post-like-button";
 import { ContentRenderer } from "@/features/posts/components/content/content-renderer";
 import type { PostWithToc } from "@/features/posts/schema/posts.schema";
 import { authClient } from "@/lib/auth/auth-client";
@@ -157,6 +158,14 @@ export function PostPage({ post }: PostPageProps) {
             </span>
             <div className="h-px w-full bg-linear-to-r from-(--fuwari-meta-divider) via-transparent to-transparent opacity-20" />
           </div>
+          <ClientOnly>
+            <div className="mb-8 flex justify-center">
+              <PostLikeButton
+                postId={post.id}
+                redirectTo={`/post/${encodeURIComponent(post.slug)}`}
+              />
+            </div>
+          </ClientOnly>
         </div>
       </div>
 

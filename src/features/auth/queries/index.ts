@@ -27,4 +27,5 @@ export function resetAuthBoundQueries(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: orpc.comments.key() });
   void queryClient.invalidateQueries({ queryKey: orpc.email.key() });
   void queryClient.invalidateQueries({ queryKey: orpc.friendLinks.mine.key() });
+  void queryClient.invalidateQueries({ queryKey: orpc.postLikes.key() });
 }

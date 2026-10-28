@@ -237,6 +237,122 @@
       }
     }
   },
+  "postLikes": {
+    "summary": {
+      "~orpc": {
+        "errorMap": {},
+        "meta": {},
+        "route": {
+          "method": "GET",
+          "path": "/posts/{postId}/likes",
+          "summary": "Get a published post's like count and viewer state",
+          "tags": ["Post Likes"]
+        }
+      }
+    },
+    "set": {
+      "~orpc": {
+        "errorMap": {},
+        "meta": {},
+        "route": {
+          "method": "PUT",
+          "path": "/posts/{postId}/likes",
+          "summary": "Like or unlike a published post",
+          "description": "Sets the signed-in user's like state. Repeating the same state is safe.",
+          "tags": ["Post Likes"]
+        }
+      }
+    }
+  },
+  "pages": {
+    "navigation": {
+      "~orpc": {
+        "errorMap": {},
+        "meta": {},
+        "route": {
+          "method": "GET",
+          "path": "/site-pages/navigation",
+          "summary": "List navigation pages",
+          "tags": ["Site Pages"]
+        }
+      }
+    },
+    "bySlug": {
+      "~orpc": {
+        "errorMap": {},
+        "meta": {},
+        "route": {
+          "method": "GET",
+          "path": "/site-pages/{slug}",
+          "summary": "Get a public page by path",
+          "tags": ["Site Pages"]
+        }
+      }
+    },
+    "admin": {
+      "list": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/admin/site-pages",
+            "summary": "List navigation pages for the Admin",
+            "tags": ["Admin Site Pages"]
+          }
+        }
+      },
+      "get": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/admin/site-pages/{id}",
+            "summary": "Get a navigation page for editing",
+            "tags": ["Admin Site Pages"]
+          }
+        }
+      },
+      "create": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "POST",
+            "path": "/admin/site-pages",
+            "summary": "Create a navigation page",
+            "description": "Creates a public Markdown page and adds it to the public navigation.",
+            "tags": ["Admin Site Pages"]
+          }
+        }
+      },
+      "update": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "PATCH",
+            "path": "/admin/site-pages/{id}",
+            "summary": "Update a navigation page",
+            "tags": ["Admin Site Pages"]
+          }
+        }
+      },
+      "remove": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "DELETE",
+            "path": "/admin/site-pages/{id}",
+            "summary": "Delete a navigation page",
+            "tags": ["Admin Site Pages"]
+          }
+        }
+      }
+    }
+  },
   "tags": {
     "list": {
       "~orpc": {

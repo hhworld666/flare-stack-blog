@@ -1,4 +1,5 @@
 import * as ConfigService from "@/features/config/service/config.service";
+import * as SitePagesRepo from "@/features/site-pages/data/site-pages.data";
 import {
   getPublishedPostsForSitemapBatch,
   type SitemapPostRow,
@@ -94,7 +95,10 @@ async function getAllPublishedPostsForSitemap(env: Env) {
 
 export async function buildSitemapXml(env: Env) {
   const { DOMAIN } = serverEnv(env);
-  const posts = await getAllPublishedPostsForSitemap(env);
+  const [posts, sitePages] = await Promise.all([
+    getAllPublishedPostsForSitemap(env),
+    SitePagesRepo.listSitePagesForSitemap(getDb(env)),
+  ]);
 
   const formatDate = (
     primaryDate: Date | null,
@@ -135,6 +139,18 @@ export async function buildSitemapXml(env: Env) {
     ${lastModifiedAt ? `<lastmod>${lastModifiedAt}</lastmod>` : ""}
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>`;
+    })
+    .join("")}
+  ${sitePages
+    .map((page) => {
+      const lastModifiedAt = formatDate(page.updatedAt);
+      return `
+  <url>
+    <loc>https://${DOMAIN}/${encodeURIComponent(page.slug)}</loc>
+    ${lastModifiedAt ? `<lastmod>${lastModifiedAt}</lastmod>` : ""}
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>`;
     })
     .join("")}

@@ -1,0 +1,87 @@
+.site-preloader {
+  position: fixed;
+  z-index: 2147483647;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--fuwari-page-bg);
+  opacity: 1;
+  transition: opacity 360ms ease;
+}
+
+.site-preloader.is-leaving {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.site-preloader__content {
+  display: grid;
+  justify-items: center;
+  gap: 1.1rem;
+}
+
+.site-preloader__cat {
+  display: block;
+  width: min(15rem, 72vw);
+  height: auto;
+  border-radius: 1rem;
+  filter: grayscale(1);
+  box-shadow: 0 14px 38px rgb(20 20 24 / 12%);
+  animation: site-preloader-float 2.2s ease-in-out infinite;
+}
+
+.dark .site-preloader__cat {
+  box-shadow: 0 18px 44px rgb(0 0 0 / 28%);
+}
+
+.site-preloader__progress {
+  width: min(11rem, 54vw);
+  height: 0.2rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(32 32 39 / 14%);
+}
+
+.site-preloader__progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #202027;
+  transition: width 100ms linear;
+}
+
+.dark .site-preloader__progress {
+  background: rgb(255 255 255 / 16%);
+}
+
+.dark .site-preloader__progress-fill {
+  background: #fff;
+}
+
+@keyframes site-preloader-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(0.6deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-preloader,
+  .site-preloader__cat {
+    animation: none;
+    transition: none;
+  }
+
+  .site-preloader__progress-fill {
+    transition: none;
+  }
+
+  .site-preloader.is-leaving {
+    opacity: 0;
+  }
+}

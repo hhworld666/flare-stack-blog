@@ -1,0 +1,53 @@
+.public-banner-media {
+  position: absolute;
+  inset: 0;
+}
+
+.public-banner-media-home {
+  opacity: 0.72;
+  filter: saturate(0.82) contrast(0.92);
+}
+
+.public-home-banner-image {
+  object-position: center 40%;
+}
+
+.public-home-banner-blend {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.16) 0%,
+    rgb(255 255 255 / 0.04) 35%,
+    var(--fuwari-page-bg) 100%
+  );
+}
+
+.dark .public-banner-media-home {
+  opacity: 0.58;
+  filter: brightness(0.72) saturate(0.68) contrast(0.92);
+}
+
+.dark .public-home-banner-blend {
+  background: linear-gradient(
+    to bottom,
+    rgb(13 12 20 / 0.2) 0%,
+    rgb(13 12 20 / 0.04) 38%,
+    var(--fuwari-page-bg) 100%
+  );
+}
+
+@media (max-width: 767px) {
+  .public-banner-media-home {
+    opacity: 0.64;
+  }
+
+  .public-home-banner-image {
+    object-position: center 38%;
+  }
+
+  .dark .public-banner-media-home {
+    opacity: 0.5;
+  }
+}

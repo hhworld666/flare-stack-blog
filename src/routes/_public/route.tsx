@@ -5,10 +5,12 @@ import {
   useRouteContext,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { PublicLayout as SitePublicLayout } from "@/components/layout/public-layout";
 import { Toaster } from "@/components/layout/toaster";
 import { useLogout } from "@/features/auth/hooks/use-logout";
 import { authClient } from "@/lib/auth/auth-client";
+import { sitePageNavigationQuery } from "@/features/site-pages/queries";
 import { CACHE_CONTROL } from "@/lib/constants";
 import { clientEnv } from "@/lib/env/client.env";
 import { isExternalNavHref } from "@/features/config/utils/nav-links";
@@ -16,6 +18,9 @@ import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/_public")({
   component: PublicLayout,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(sitePageNavigationQuery);
+  },
   headers: () => {
     return CACHE_CONTROL.public;
   },
@@ -40,6 +45,7 @@ function PublicLayout() {
   const { siteConfig } = useRouteContext({ from: "__root__" });
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
+  const { data: sitePages } = useSuspenseQuery(sitePageNavigationQuery);
   const { logout } = useLogout();
 
   const navOptions = [
@@ -56,6 +62,12 @@ function PublicLayout() {
       label: link.label,
       href: link.href,
       external: isExternalNavHref(link.href),
+    })),
+    ...sitePages.map((page) => ({
+      id: `site-page-${page.id}`,
+      label: page.title,
+      href: `/${encodeURIComponent(page.slug)}`,
+      external: false,
     })),
   ];
 
