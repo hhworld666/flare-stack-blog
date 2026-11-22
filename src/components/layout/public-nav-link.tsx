@@ -14,6 +14,35 @@ function postSlugFromHref(href: string): string | null {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
+/**
+ * Custom public pages use the catch-all `/$` route. Passing the decoded path
+ * as its splat parameter lets TanStack Router handle the navigation in the
+ * client instead of falling back to a full document request.
+ */
+function internalHrefParts(href: string) {
+  let url: URL;
+  try {
+    url = new URL(href, "https://router.local");
+  } catch {
+    return null;
+  }
+
+  if (url.pathname === "/" || !url.pathname.startsWith("/")) return null;
+
+  let splat: string;
+  try {
+    splat = decodeURIComponent(url.pathname.slice(1));
+  } catch {
+    return null;
+  }
+
+  return {
+    splat,
+    search: Object.fromEntries(url.searchParams.entries()),
+    hash: url.hash.slice(1),
+  };
+}
+
 export function PublicNavLink({
   option,
   className,
@@ -74,6 +103,25 @@ export function PublicNavLink({
     return (
       <Link
         to={staticTo}
+        className={className}
+        activeProps={
+          activeClassName ? { className: activeClassName } : undefined
+        }
+        onClick={onClick}
+      >
+        {label}
+      </Link>
+    );
+  }
+
+  const internal = internalHrefParts(option.href);
+  if (internal) {
+    return (
+      <Link
+        to="/$"
+        params={{ _splat: internal.splat }}
+        search={internal.search}
+        hash={internal.hash || undefined}
         className={className}
         activeProps={
           activeClassName ? { className: activeClassName } : undefined
