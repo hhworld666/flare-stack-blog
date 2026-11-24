@@ -11,10 +11,13 @@ import { Toaster } from "@/components/layout/toaster";
 import { useLogout } from "@/features/auth/hooks/use-logout";
 import { authClient } from "@/lib/auth/auth-client";
 import { sitePageNavigationQuery } from "@/features/site-pages/queries";
+import { sitePageTitle } from "@/features/site-pages/site-pages.schema";
 import { CACHE_CONTROL } from "@/lib/constants";
 import { clientEnv } from "@/lib/env/client.env";
 import { isExternalNavHref } from "@/features/config/utils/nav-links";
+import { navLinkLabel } from "@/features/config/utils/nav-links";
 import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 
 export const Route = createFileRoute("/_public")({
   component: PublicLayout,
@@ -47,6 +50,7 @@ function PublicLayout() {
     authClient.useSession();
   const { data: sitePages } = useSuspenseQuery(sitePageNavigationQuery);
   const { logout } = useLogout();
+  const locale = getLocale();
 
   const navOptions = [
     { id: "home", label: m.nav_home(), href: "/", external: false },
@@ -59,13 +63,13 @@ function PublicLayout() {
     },
     ...siteConfig.navLinks.map((link, index) => ({
       id: `custom-${index}`,
-      label: link.label,
+      label: navLinkLabel(link, locale),
       href: link.href,
       external: isExternalNavHref(link.href),
     })),
     ...sitePages.map((page) => ({
       id: `site-page-${page.id}`,
-      label: page.title,
+      label: sitePageTitle(page, locale),
       href: `/${encodeURIComponent(page.slug)}`,
       external: false,
     })),

@@ -6,6 +6,7 @@ export async function listPublicSitePageNavigation(db: DB) {
     .select({
       id: SitePagesTable.id,
       title: SitePagesTable.title,
+      titleEn: SitePagesTable.titleEn,
       slug: SitePagesTable.slug,
     })
     .from(SitePagesTable)
@@ -27,6 +28,7 @@ export async function findPublicSitePageBySlug(db: DB, slug: string) {
     .select({
       id: SitePagesTable.id,
       title: SitePagesTable.title,
+      titleEn: SitePagesTable.titleEn,
       slug: SitePagesTable.slug,
       contentMarkdown: SitePagesTable.contentMarkdown,
     })
@@ -42,6 +44,7 @@ export async function listAdminSitePages(db: DB) {
     .select({
       id: SitePagesTable.id,
       title: SitePagesTable.title,
+      titleEn: SitePagesTable.titleEn,
       slug: SitePagesTable.slug,
       updatedAt: SitePagesTable.updatedAt,
     })
@@ -76,7 +79,12 @@ export async function sitePageSlugExists(
 
 export async function insertSitePage(
   db: DB,
-  data: { title: string; slug: string; contentMarkdown: string },
+  data: {
+    title: string;
+    titleEn: string;
+    slug: string;
+    contentMarkdown: string;
+  },
 ) {
   const [page] = await db.insert(SitePagesTable).values(data).returning();
   return page;
@@ -85,7 +93,12 @@ export async function insertSitePage(
 export async function updateSitePage(
   db: DB,
   id: number,
-  data: { title: string; slug: string; contentMarkdown: string },
+  data: {
+    title: string;
+    titleEn: string;
+    slug: string;
+    contentMarkdown: string;
+  },
 ) {
   const [page] = await db
     .update(SitePagesTable)

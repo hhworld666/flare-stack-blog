@@ -78,6 +78,7 @@ export async function updateSitePage(
   try {
     const page = await SitePagesRepo.updateSitePage(context.db, input.id, {
       title: input.title,
+      titleEn: input.titleEn,
       slug: input.slug,
       contentMarkdown: input.contentMarkdown,
     });

@@ -7,6 +7,7 @@ export const SitePagesTable = sqliteTable(
   {
     id,
     title: text().notNull(),
+    titleEn: text("title_en").notNull().default(""),
     slug: text().notNull(),
     contentMarkdown: text("content_markdown").notNull(),
     createdAt,

@@ -1,12 +1,14 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { NotFound } from "@/components/common/not-found";
 import { PublicSitePageView } from "@/features/site-pages/components/public-site-page";
+import { sitePageTitle } from "@/features/site-pages/site-pages.schema";
 import { publicSitePageQuery } from "@/features/site-pages/queries";
 import { sitePageSlugFromPathname } from "@/features/site-pages/site-page-path";
 import { siteDomainQuery } from "@/features/config/queries";
 import { CACHE_CONTROL } from "@/lib/constants";
 import { buildCanonicalUrl, canonicalLink } from "@/lib/seo";
 import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 
 export const Route = createFileRoute("/_public/$")({
   loader: async ({ context, location }) => {
@@ -32,7 +34,13 @@ export const Route = createFileRoute("/_public/$")({
   headers: ({ loaderData }) =>
     loaderData?.page ? CACHE_CONTROL.public : CACHE_CONTROL.notFound,
   head: ({ loaderData }) => ({
-    meta: [{ title: loaderData?.page.title ?? m.not_found_title() }],
+    meta: [
+      {
+        title: loaderData?.page
+          ? sitePageTitle(loaderData.page, getLocale())
+          : m.not_found_title(),
+      },
+    ],
     links: loaderData?.canonicalHref
       ? [canonicalLink(loaderData.canonicalHref)]
       : [],

@@ -3,8 +3,19 @@ export const NAV_LINK_LABEL_MAX = 20;
 
 export type NavLink = {
   label: string;
+  /** Optional English label; `label` remains the Chinese/fallback label. */
+  labelEn?: string;
   href: string;
 };
+
+export type NavLocale = "zh" | "en";
+
+/** Pick the label for the active language while keeping old configs valid. */
+export function navLinkLabel(link: NavLink, locale: NavLocale): string {
+  return locale === "en" && link.labelEn?.trim()
+    ? link.labelEn.trim()
+    : link.label;
+}
 
 export function isExternalNavHref(href: string): boolean {
   try {
@@ -47,14 +58,21 @@ export function normalizeNavLinks(value: unknown): NavLink[] {
   const links: NavLink[] = [];
   for (const item of value) {
     if (!item || typeof item !== "object") continue;
-    const record = item as { label?: unknown; href?: unknown };
+    const record = item as {
+      label?: unknown;
+      labelEn?: unknown;
+      href?: unknown;
+    };
     const label = typeof record.label === "string" ? record.label.trim() : "";
+    const labelEn =
+      typeof record.labelEn === "string" ? record.labelEn.trim() : "";
     const href = canonicalizeNavHref(
       typeof record.href === "string" ? record.href : "",
     );
     if (!label || !isNavHref(href)) continue;
     links.push({
       label: label.slice(0, NAV_LINK_LABEL_MAX),
+      ...(labelEn ? { labelEn: labelEn.slice(0, NAV_LINK_LABEL_MAX) } : {}),
       href,
     });
     if (links.length >= NAV_LINKS_MAX) break;

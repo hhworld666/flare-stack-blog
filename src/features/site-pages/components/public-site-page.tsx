@@ -1,11 +1,14 @@
 import type { PublicSitePage } from "@/features/site-pages/site-pages.schema";
+import { getLocale } from "@/paraglide/runtime";
+import { sitePageTitle } from "@/features/site-pages/site-pages.schema";
 import { SitePageContent } from "./site-page-content";
 
 export function PublicSitePageView({ page }: { page: PublicSitePage }) {
+  const title = sitePageTitle(page, getLocale());
   return (
     <article className="fuwari-card-base relative px-6 py-7 md:px-9 md:py-9">
       <h1 className="mb-6 text-3xl font-bold fuwari-text-90 md:text-4xl">
-        {page.title}
+        {title}
       </h1>
       <div className="mb-7 border-b border-dashed border-(--fuwari-meta-divider)" />
       <SitePageContent

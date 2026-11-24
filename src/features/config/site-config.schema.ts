@@ -24,6 +24,7 @@ function createSiteTextSchema(max: number) {
 
 const NavLinkSchema = z.object({
   label: createSiteTextSchema(NAV_LINK_LABEL_MAX).pipe(z.string().min(1)),
+  labelEn: createSiteTextSchema(NAV_LINK_LABEL_MAX).optional(),
   href: z.string().trim().refine(isNavHref, {
     message: "Please enter a root-relative path or http(s) URL",
   }),
@@ -34,6 +35,7 @@ function createNavLinksFormSchema(messages: Messages) {
     .array(
       z.object({
         label: z.string(),
+        labelEn: z.string().optional().default(""),
         href: z.string(),
       }),
     )
@@ -41,6 +43,7 @@ function createNavLinksFormSchema(messages: Messages) {
     .transform((links) =>
       links.map((link) => ({
         label: link.label.trim(),
+        labelEn: link.labelEn.trim(),
         href: canonicalizeNavHref(link.href),
       })),
     )
@@ -60,6 +63,15 @@ function createNavLinksFormSchema(messages: Messages) {
               max: NAV_LINK_LABEL_MAX,
             }),
             path: [index, "label"],
+          });
+        }
+        if (link.labelEn.length > NAV_LINK_LABEL_MAX) {
+          ctx.addIssue({
+            code: "custom",
+            message: messages.settings_site_validation_too_long({
+              max: NAV_LINK_LABEL_MAX,
+            }),
+            path: [index, "labelEn"],
           });
         }
         if (!link.href) {

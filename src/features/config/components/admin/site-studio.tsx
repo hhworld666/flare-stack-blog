@@ -262,6 +262,7 @@ function NavLinksEditor() {
           const href = watch(`site.navLinks.${index}.href`) ?? "";
           const canonicalHref = canonicalizeNavHref(href);
           const labelError = linkErrors?.[index]?.label?.message;
+          const labelEnError = linkErrors?.[index]?.labelEn?.message;
           const hrefError = linkErrors?.[index]?.href?.message;
           return (
             <div
@@ -297,11 +298,18 @@ function NavLinksEditor() {
                 >
                   <GripVertical size={18} />
                 </button>
-                <Input
-                  {...register(`site.navLinks.${index}.label`)}
-                  placeholder={m.settings_site_nav_label_ph()}
-                  aria-label={m.settings_site_nav_name()}
-                />
+                <div className="site-nav-label-fields">
+                  <Input
+                    {...register(`site.navLinks.${index}.label`)}
+                    placeholder={m.settings_site_nav_label_ph()}
+                    aria-label={m.settings_site_nav_name()}
+                  />
+                  <Input
+                    {...register(`site.navLinks.${index}.labelEn`)}
+                    placeholder={m.settings_site_nav_label_en_ph()}
+                    aria-label={m.settings_site_nav_name_en()}
+                  />
+                </div>
                 <div className="relative min-w-0 flex-1">
                   <Input
                     {...register(`site.navLinks.${index}.href`, {
@@ -335,9 +343,9 @@ function NavLinksEditor() {
                   <Trash2 size={16} />
                 </IconButton>
               </div>
-              {labelError || hrefError ? (
+              {labelError || labelEnError || hrefError ? (
                 <p className="fuwari-form-field-error">
-                  {hrefError || labelError}
+                  {hrefError || labelError || labelEnError}
                 </p>
               ) : null}
             </div>
@@ -349,7 +357,7 @@ function NavLinksEditor() {
         <Button
           variant="text"
           size="sm"
-          onClick={() => append({ label: "", href: "" })}
+          onClick={() => append({ label: "", labelEn: "", href: "" })}
           icon={<Plus size={14} />}
           className="site-add-link"
         >

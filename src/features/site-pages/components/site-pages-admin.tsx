@@ -15,13 +15,18 @@ import { Input, Textarea } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-heading";
 import { isValidSitePageSlug } from "@/features/site-pages/site-page-path";
 import { adminSitePagesQuery } from "@/features/site-pages/queries";
-import type { AdminSitePage } from "@/features/site-pages/site-pages.schema";
+import {
+  sitePageTitle,
+  type AdminSitePage,
+} from "@/features/site-pages/site-pages.schema";
 import { SitePageContent } from "@/features/site-pages/components/site-page-content";
 import { orpc, orpcClient } from "@/lib/orpc";
 import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 
 export function SitePagesAdminList() {
   const { data: pages } = useSuspenseQuery(adminSitePagesQuery);
+  const locale = getLocale();
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,7 +71,7 @@ export function SitePagesAdminList() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium fuwari-text-90">
-                    {page.title}
+                    {sitePageTitle(page, locale)}
                   </span>
                   <span className="mt-1 block truncate text-sm fuwari-text-50">
                     /{page.slug}
@@ -97,6 +102,7 @@ export function SitePageEditor({ page }: { page?: AdminSitePage }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(page?.title ?? "");
+  const [titleEn, setTitleEn] = useState(page?.titleEn ?? "");
   const [slug, setSlug] = useState(page?.slug ?? "");
   const [contentMarkdown, setContentMarkdown] = useState(
     page?.contentMarkdown ?? "",
@@ -110,6 +116,7 @@ export function SitePageEditor({ page }: { page?: AdminSitePage }) {
   const saveMutation = useMutation({
     mutationFn: (input: {
       title: string;
+      titleEn: string;
       slug: string;
       contentMarkdown: string;
     }) =>
@@ -168,6 +175,7 @@ export function SitePageEditor({ page }: { page?: AdminSitePage }) {
     setSlugError("");
     saveMutation.mutate({
       title: normalizedTitle,
+      titleEn: titleEn.trim(),
       slug: normalizedSlug,
       contentMarkdown,
     });
@@ -212,7 +220,7 @@ export function SitePageEditor({ page }: { page?: AdminSitePage }) {
         />
 
         <section className="fuwari-card-base flex flex-col gap-5 p-5 md:p-7">
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-3">
             <FormField
               label={m.site_pages_field_title()}
               error={titleError || undefined}
@@ -228,6 +236,13 @@ export function SitePageEditor({ page }: { page?: AdminSitePage }) {
                   setTitleError("");
                   if (!slugEdited) setSlug(slugFromTitle(nextTitle));
                 }}
+              />
+            </FormField>
+            <FormField label={m.site_pages_field_title_en()}>
+              <Input
+                value={titleEn}
+                maxLength={120}
+                onChange={(event) => setTitleEn(event.currentTarget.value)}
               />
             </FormField>
             <FormField

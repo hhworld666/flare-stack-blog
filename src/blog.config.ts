@@ -11,9 +11,13 @@ export const blogConfig = {
     { platform: "rss", url: "/rss.xml" },
   ],
   navLinks: [
-    { label: "关于", href: "/post/about" },
-    { label: "友链", href: "/friend-links" },
-    { label: "GitHub", href: "https://github.com/hhworld666" },
+    { label: "关于", labelEn: "About", href: "/post/about" },
+    { label: "友链", labelEn: "Links", href: "/friend-links" },
+    {
+      label: "GitHub",
+      labelEn: "GitHub",
+      href: "https://github.com/hhworld666",
+    },
   ],
   icons: {
     faviconSvg: "/favicon.svg",

@@ -229,9 +229,15 @@
 }
 .site-nav-row {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1.3fr) 36px;
+  grid-template-columns: 28px minmax(0, 1.4fr) minmax(0, 1.3fr) 36px;
   align-items: center;
   gap: 10px;
+}
+.site-nav-label-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
 }
 .site-nav-section > .site-add-link {
   margin-top: 10px;
@@ -293,7 +299,7 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .site-nav-row {
-    grid-template-columns: 24px minmax(0, 0.8fr) minmax(0, 1.2fr) 36px;
+    grid-template-columns: 24px minmax(0, 1.4fr) minmax(0, 1.2fr) 36px;
     gap: 8px;
   }
   .site-social-editor > .flex {

@@ -4,6 +4,7 @@ import {
   resolveSiteConfig,
   resolveSystemConfig,
 } from "@/features/config/config.resolve";
+import { navLinkLabel } from "@/features/config/utils/nav-links";
 
 describe("resolveSystemConfig webhook", () => {
   it("keeps a single webhook URL and secret", () => {
@@ -92,8 +93,8 @@ describe("resolveSiteConfig navLinks", () => {
     const config = resolveSiteConfig({
       site: {
         navLinks: [
-          { label: "About", href: "/post/about" },
-          { label: "GitHub", href: "github.com/du2333" },
+          { label: "关于", labelEn: "About", href: "/post/about" },
+          { label: "GitHub", labelEn: "GitHub", href: "github.com/du2333" },
           { label: "Bad", href: "javascript:alert(1)" },
           { label: "", href: "/posts" },
           { label: "Extra", href: "/too-many-1" },
@@ -105,11 +106,18 @@ describe("resolveSiteConfig navLinks", () => {
     });
 
     expect(config.navLinks).toEqual([
-      { label: "About", href: "/post/about" },
-      { label: "GitHub", href: "https://github.com/du2333" },
+      { label: "关于", labelEn: "About", href: "/post/about" },
+      { label: "GitHub", labelEn: "GitHub", href: "https://github.com/du2333" },
       { label: "Extra", href: "/too-many-1" },
       { label: "Extra", href: "/too-many-2" },
       { label: "Extra", href: "/too-many-3" },
     ]);
+  });
+
+  it("uses the English label and falls back for legacy links", () => {
+    expect(
+      navLinkLabel({ label: "关于", labelEn: "About", href: "/about" }, "en"),
+    ).toBe("About");
+    expect(navLinkLabel({ label: "关于", href: "/about" }, "en")).toBe("关于");
   });
 });

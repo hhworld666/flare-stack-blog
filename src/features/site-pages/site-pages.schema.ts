@@ -14,6 +14,7 @@ export const SitePageSlugSchema = z
 
 const SitePageFieldsSchema = z.object({
   title: z.string().trim().min(1).max(120),
+  titleEn: z.string().trim().max(120).optional().default(""),
   slug: SitePageSlugSchema,
   contentMarkdown: z.string().max(200_000),
 });
@@ -21,6 +22,7 @@ const SitePageFieldsSchema = z.object({
 export const PublicSitePageNavigationItemSchema = z.object({
   id: z.number().int().positive(),
   title: z.string(),
+  titleEn: z.string(),
   slug: SitePageSlugSchema,
 });
 
@@ -31,6 +33,7 @@ export const PublicSitePageSchema = PublicSitePageNavigationItemSchema.extend({
 export const AdminSitePageListItemSchema = z.object({
   id: z.number().int().positive(),
   title: z.string(),
+  titleEn: z.string(),
   slug: SitePageSlugSchema,
   updatedAt: dateSchema,
 });
@@ -57,3 +60,12 @@ export type AdminSitePageListItem = z.infer<typeof AdminSitePageListItemSchema>;
 export type PublicSitePage = z.infer<typeof PublicSitePageSchema>;
 export type CreateSitePageInput = z.infer<typeof CreateSitePageInputSchema>;
 export type UpdateSitePageInput = z.infer<typeof UpdateSitePageInputSchema>;
+
+export function sitePageTitle(
+  page: { title: string; titleEn?: string | null },
+  locale: "zh" | "en",
+) {
+  return locale === "en" && page.titleEn?.trim()
+    ? page.titleEn.trim()
+    : page.title;
+}
