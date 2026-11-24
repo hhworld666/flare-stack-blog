@@ -1,14 +1,12 @@
 import type { Editor } from "@tiptap/react";
-import { CornerDownLeft, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useId, useRef, useState } from "react";
-import { IconButton } from "@/components/ui/icon-button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { Spinner } from "@/components/ui/spinner";
-import { MediaPickerGrid } from "@/features/media/components/media-library/components";
 import {
-  useMediaPicker,
-  useMediaUrlImport,
-} from "@/features/media/components/media-library/hooks";
+  MediaPickerGrid,
+  MediaUrlField,
+} from "@/features/media/components/media-library/components";
+import { useMediaPicker } from "@/features/media/components/media-library/hooks";
 import type { MediaAsset } from "@/features/media/components/media-library/types";
 import { ACCEPTED_IMAGE_TYPES } from "@/features/media/media.schema";
 import { useImagePicker } from "@/features/posts/editor/extensions/image-placeholder";
@@ -82,7 +80,7 @@ export function ImagePickerPopover({ editor }: { editor: Editor | null }) {
             onFile={(file) => editor?.commands.uploadImageToPlaceholder(file)}
           />
         ) : tab === "link" ? (
-          <LinkPanel known={library.mediaItems} onImport={fill} />
+          <MediaUrlField known={library.mediaItems} onImport={fill} />
         ) : (
           <div className="max-h-72 overflow-y-auto p-1 custom-scrollbar">
             <MediaPickerGrid
@@ -121,49 +119,5 @@ function UploadPanel({ onFile }: { onFile: (file: File) => void }) {
         }}
       />
     </>
-  );
-}
-
-function LinkPanel({
-  known,
-  onImport,
-}: {
-  known: ReadonlyArray<MediaAsset>;
-  onImport: (asset: MediaAsset) => void;
-}) {
-  const [url, setUrl] = useState("");
-  const { importUrl, importing } = useMediaUrlImport(known);
-
-  const submit = async () => {
-    if (importing) return;
-    const asset = await importUrl(url);
-    if (asset) onImport(asset);
-  };
-
-  return (
-    <div className="flex items-center gap-1">
-      <input
-        type="text"
-        inputMode="url"
-        value={url}
-        onChange={(event) => setUrl(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
-          event.preventDefault();
-          void submit();
-        }}
-        aria-label={m.editor_image_url()}
-        placeholder="https://"
-        disabled={importing}
-        className="h-8 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-sm fuwari-text-90 outline-none placeholder:fuwari-text-30"
-      />
-      <IconButton
-        label={m.editor_image_import()}
-        onClick={() => void submit()}
-        disabled={importing || !url.trim()}
-      >
-        {importing ? <Spinner size={14} /> : <CornerDownLeft size={14} />}
-      </IconButton>
-    </div>
   );
 }

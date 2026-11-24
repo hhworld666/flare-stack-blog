@@ -1,4 +1,4 @@
-import { Upload } from "lucide-react";
+import { Link2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAdminChrome } from "@/components/admin/admin-chrome";
@@ -12,8 +12,9 @@ import {
   useMotionPresence,
 } from "@/hooks/use-motion";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FloatingPopover } from "@/components/ui/floating-popover";
 import { m } from "@/paraglide/messages";
-import { MediaDetail, MediaToolbar } from "./components";
+import { MediaDetail, MediaToolbar, MediaUrlField } from "./components";
 import { MediaCollection } from "./components/media-collection";
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
@@ -36,6 +37,11 @@ export function MediaLibrary() {
     { kind: "one"; asset: MediaAsset } | { kind: "unused" } | null
   >(null);
   const [dragging, setDragging] = useState(false);
+  const [importAnchor, setImportAnchor] = useState<HTMLButtonElement | null>(
+    null,
+  );
+  const [importOpen, setImportOpen] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
   const {
     mediaItems,
@@ -165,15 +171,47 @@ export function MediaLibrary() {
             : "—"
         }
         actions={
-          <Button
-            ref={uploadRef}
-            variant="primary"
-            icon={<Upload size={17} />}
-            disabled={isUploading}
-            onClick={openFilePicker}
-          >
-            {m.media_upload()}
-          </Button>
+          <>
+            <Button
+              ref={setImportAnchor}
+              variant="regular"
+              icon={<Link2 size={16} />}
+              aria-haspopup="dialog"
+              aria-expanded={importOpen}
+              onClick={() => setImportOpen((open) => !open)}
+            >
+              {m.media_import_link()}
+            </Button>
+            <FloatingPopover
+              open={importOpen}
+              anchor={importAnchor}
+              placement="bottom-end"
+              onDismiss={() => setImportOpen(false)}
+              returnFocusOnEscape
+              initialFocus={() => importInputRef.current}
+              role="dialog"
+              aria-label={m.media_import_link()}
+              className="w-96 max-w-[calc(100vw-1rem)] p-2"
+            >
+              <MediaUrlField
+                inputRef={importInputRef}
+                known={mediaItems}
+                onImport={() => {
+                  setImportOpen(false);
+                  toast.success(m.media_import_success());
+                }}
+              />
+            </FloatingPopover>
+            <Button
+              ref={uploadRef}
+              variant="primary"
+              icon={<Upload size={17} />}
+              disabled={isUploading}
+              onClick={openFilePicker}
+            >
+              {m.media_upload()}
+            </Button>
+          </>
         }
       />
       <MediaToolbar

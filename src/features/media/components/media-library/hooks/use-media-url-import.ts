@@ -1,7 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { extractImageKey } from "@/features/media/utils/media.utils";
-import { orpcClient } from "@/lib/orpc";
+import { orpc, orpcClient } from "@/lib/orpc";
 import { m } from "@/paraglide/messages";
 import type { MediaAsset } from "../types";
 
@@ -11,6 +12,7 @@ import type { MediaAsset } from "../types";
  * `null` (after a toast) when the import fails.
  */
 export function useMediaUrlImport(known: ReadonlyArray<MediaAsset>) {
+  const queryClient = useQueryClient();
   const [importing, setImporting] = useState(false);
 
   const importUrl = async (url: string): Promise<MediaAsset | null> => {
@@ -24,6 +26,8 @@ export function useMediaUrlImport(known: ReadonlyArray<MediaAsset>) {
     setImporting(true);
     try {
       const media = await orpcClient.media.importFromUrl({ url: trimmed });
+      // Refresh every mounted library/picker query after an import.
+      void queryClient.invalidateQueries({ queryKey: orpc.media.key() });
       return { ...media, postCount: 0, isCover: false };
     } catch {
       toast.error(m.media_import_fail());
